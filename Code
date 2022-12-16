@@ -1,0 +1,95 @@
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Windows.Forms;
+
+namespace ScreenshotEmailer
+{
+    public class ScreenshotEmailer : Form
+    {
+        // System tray icon
+        private NotifyIcon trayIcon;
+
+        // System tray menu
+        private ContextMenu trayMenu;
+
+        public ScreenshotEmailer()
+        {
+            // Create a tray menu with a single "Take Screenshot and Email" item
+            trayMenu = new ContextMenu();
+            trayMenu.MenuItems.Add("Take Screenshot and Email", OnTakeScreenshot);
+
+            // Create a tray icon
+            trayIcon = new NotifyIcon();
+            trayIcon.Text = "Screenshot Emailer";
+            trayIcon.Icon = new Icon(SystemIcons.Application, 40, 40);
+
+            // Add the tray menu to the tray icon and show it
+            trayIcon.ContextMenu = trayMenu;
+            trayIcon.Visible = true;
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            Visible = false; // Hide form window
+            ShowInTaskbar = false; // Remove from taskbar
+
+            base.OnLoad(e);
+        }
+
+        private void OnTakeScreenshot(object sender, EventArgs e)
+        {
+            // Take screenshot
+            Bitmap screenshot = TakeScreenshot();
+
+            // Save screenshot as image file
+            string fileName = "screenshot.png";
+            SaveScreenshot(screenshot, fileName);
+
+            // Get device information
+            string deviceName = Environment.MachineName;
+            string operatingSystem = Environment.OSVersion.ToString();
+            string localIPAddress = GetLocalIPAddress();
+            string externalIPAddress = GetExternalIPAddress();
+            string macAddress = GetMACAddress();
+
+            // Format device information into message body
+            string body = "Attached is a screenshot of the problem I am experiencing on my computer.\n\n";
+            body += "Device Name: " + deviceName + "\n";
+            body += "Operating System: " + operatingSystem + "\n";
+            body += "Local IP Address: " + localIPAddress + "\n";
+            body += "External IP Address: " + externalIPAddress + "\n";
+            body += "MAC Address: " + macAddress + "\n";
+
+            // Send email with screenshot as attachment
+            string toAddress = "support@example.com";
+            string fromAddress = "sender@example.com";
+            string subject = "Screenshot of problem";
+            string attachmentFile = fileName;
+            string smtpServer = "smtp.example.com";
+            int smtpPort = 587;
+            string smtpUsername = "sender@example.com";
+            string smtpPassword = "password";
+            SendEmail(toAddress, fromAddress, subject, body, attachmentFile, smtpServer, smtpPort, smtpUsername, smtpPassword);
+        }
+
+        static Bitmap TakeScreenshot()
+        {
+            // Create a new bitmap
+            Bitmap bitmap = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+
+            // Create a graphics object from the bitmap
+            Graphics g = Graphics.FromImage(bitmap);
+
+            // Copy the screen contents to the bitmap
+            g.CopyFromScreen(0, 0, 0, 0, bitmap.Size);
+
+            // Dispose of the graphics object
+            g.Dispose();
+
+            // Return the bitmap
+            return bitmap;
+        }
